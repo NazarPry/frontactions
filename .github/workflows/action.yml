@@ -1,0 +1,46 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build: 
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with: 
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Lint test
+        run: npx eslint .
+
+      - name: Regular test
+        run: npm test
+
+      - name: Build app
+        run: REACT_APP_BASE_URL="" npm run build
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Build, tag and push RDS
+        env: 
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: inter/frontend
+          IMAGE_TAG: test
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      
+      
+            
