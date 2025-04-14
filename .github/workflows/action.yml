@@ -29,6 +29,9 @@ jobs:
       - name: Build app
         run: REACT_APP_BASE_URL="" npm run build
 
+      - name: Get App Version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
       - name: Login ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -37,10 +40,9 @@ jobs:
         env: 
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: inter/frontend
-          IMAGE_TAG: test
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION
       
       
             
